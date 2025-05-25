@@ -30,7 +30,7 @@ def plot_from_df(df, folium_map):
     return folium_map
 
 def load_df():
-    return pd.read_csv("out.c_streamlite.dataproapp.csv")
+    return pd.read_csv("dataproapp.csv")
 
 FACT_BACKGROUND = """
                     <div style="width: 100%;">
