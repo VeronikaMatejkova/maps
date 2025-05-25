@@ -35,9 +35,42 @@ def load_df():
         "DataProApp.csv"  # fallback pro lokální vývoj
     ]:
         try:
-            return pd.read_csv(path)
+            df = pd.read_csv(path, sep=";")
+
+            df.columns = [col.strip().lower() for col in df.columns]
+            df = df.rename(columns={
+                'name': 'ID',
+                'clean_type': 'Type',
+                'location_lat': 'Latitude',
+                'location_lng': 'Longitude'
+            })
+
+            df['ID'] = df['ID'].str.strip()
+            df['Type'] = df['Type'].str.strip()
+
+            def map_icon_id(typ):
+                typ = typ.lower()
+                if 'hrad' in typ and 'zámek' in typ:
+                    return 2
+                elif 'hrad' in typ:
+                    return 0
+                elif 'zámek' in typ:
+                    return 1
+                else:
+                    return None
+
+            df['Icon_ID'] = df['Type'].apply(map_icon_id)
+
+            df['Latitude'] = df['Latitude'].astype(str).str.replace(" ", "").str.replace(",", ".").astype(float)
+            df['Longitude'] = df['Longitude'].astype(str).str.replace(" ", "").str.replace(",", ".").astype(float)
+
+            df['Icon_Size'] = 50
+            df['Opacity'] = 1.0
+
+            return df[['ID', 'Icon_ID', 'Icon_Size', 'Opacity', 'Latitude', 'Longitude']]
         except FileNotFoundError:
             continue
+
     raise FileNotFoundError("CSV soubor nebyl nalezen.")
 
 FACT_BACKGROUND = """
