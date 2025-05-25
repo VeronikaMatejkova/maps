@@ -34,17 +34,20 @@ def load_df():
     try:
         df = pd.read_csv(GITHUB_CSV_URL)
 
-        # Ověření přítomnosti očekávaných sloupců
         required_cols = ['ID', 'Icon_ID', 'Icon_Size', 'Opacity', 'Latitude', 'Longitude']
         if not all(col in df.columns for col in required_cols):
             raise ValueError(f"CSV soubor neobsahuje požadované sloupce: {required_cols}")
 
-        # Převedeme na správné typy, pokud by někde zlobilo
-        df['Latitude'] = df['Latitude'].astype(float)
-        df['Longitude'] = df['Longitude'].astype(float)
-        df['Icon_ID'] = df['Icon_ID'].astype(int)
-        df['Icon_Size'] = df['Icon_Size'].astype(int)
-        df['Opacity'] = df['Opacity'].astype(float)
+        # Odstraníme řádky s chybějícími důležitými hodnotami
+        df = df.dropna(subset=['ID', 'Icon_ID', 'Latitude', 'Longitude'])
+
+        # Bezpečný převod datových typů
+        df['ID'] = df['ID'].astype(str).str.strip()
+        df['Icon_ID'] = df['Icon_ID'].astype(float).fillna(99).astype(int)
+        df['Icon_Size'] = df['Icon_Size'].astype(float).fillna(50).astype(int)
+        df['Opacity'] = df['Opacity'].astype(float).fillna(1.0)
+        df['Latitude'] = df['Latitude'].astype(str).str.replace(",", ".").astype(float)
+        df['Longitude'] = df['Longitude'].astype(str).str.replace(",", ".").astype(float)
 
         return df[required_cols]
 
