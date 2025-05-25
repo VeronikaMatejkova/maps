@@ -30,13 +30,13 @@ def plot_from_df(df, folium_map):
     return folium_map
 
 def load_df():
-    data = {'ID': ['Bečov nad Teplou', 'Benešov nad Ploučnicí'],
-            'Icon_ID': [0, 1],
-            'Icon_Size': [50, 80],
-            'Opacity': [1, 1],
-            'Latitude': [50.085601, 50.7423227],
-            'Longitude': [12.8398053, 14.3114262]}
-    df = pd.DataFrame(data)
+    try:
+        # Cesta v Keboola Pythonu
+        df = pd.read_csv("data/in/tables/DataProApp.csv")
+    except FileNotFoundError:
+        # Lokální fallback při vývoji
+        df = pd.read_csv("DataProApp.csv")
+
     return df
 
 FACT_BACKGROUND = """
@@ -58,10 +58,9 @@ FACT_BACKGROUND = """
 
 TITLE = 'Hrady a zámky ČR'
 
-IM_CONSTANTS = {0:'https://www.zamek-becov.cz/pamatky/becov-nad-teplou/fotogalerie/pohledy/image-thumb__11023__SightSliderImage/letecky%20pohled%20na%20areal.jpg', 
-                1:'https://www.zamek-benesov.cz/pamatky/benesov-nad-ploucnici/DO%202021/Karusel/image-thumb__189727__SightSliderImage_auto_ba0a24351e123b1218c39cddcfe4c7e8/karusel_web_03-oprava.jpg'}
-
-SELECTED_MAP = {'Bečov': 0, 'Benešov': 1}
+IM_CONSTANTS = {0:'https://ibb.co/PvNv1CjL', 
+                1:'https://ibb.co/mVmTt85Y'
+                2:'https://ibb.co/JFcvFc4n'}
 
 
 @st.cache_resource  # @st.cache_data
@@ -131,8 +130,9 @@ def main():
         st.session_state.selected_id = level1_map_data['last_object_clicked_tooltip']
 
         if st.session_state.selected_id is not None:
+            selected_icon_id = df[df["ID"] == st.session_state.selected_id]["Icon_ID"].values[0]
             st.write(f'You Have Selected: {st.session_state.selected_id}')
-            st.image(IM_CONSTANTS[SELECTED_MAP[st.session_state.selected_id]], width=110)
+            st.image(IM_CONSTANTS[selected_icon_id], width=110)
 
 
 if __name__ == "__main__":
