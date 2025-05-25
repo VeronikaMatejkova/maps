@@ -30,14 +30,7 @@ def plot_from_df(df, folium_map):
     return folium_map
 
 def load_df():
-    try:
-        # Cesta v Keboola Pythonu
-        df = pd.read_csv("data/in/tables/DataProApp.csv")
-    except FileNotFoundError:
-        # Lokální fallback při vývoji
-        df = pd.read_csv("DataProApp.csv")
-
-    return df
+    return pd.read_csv("out.c_streamlite.dataproapp.csv")
 
 FACT_BACKGROUND = """
                     <div style="width: 100%;">
