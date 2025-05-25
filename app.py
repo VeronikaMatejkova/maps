@@ -32,37 +32,21 @@ def plot_from_df(df, folium_map):
 def load_df():
     GITHUB_CSV_URL = "https://raw.githubusercontent.com/VeronikaMatejkova/maps/main/DataProApp.csv"
     try:
-        df = pd.read_csv(GITHUB_CSV_URL, sep=";")
+        df = pd.read_csv(GITHUB_CSV_URL)
 
-        df.columns = [col.strip().lower() for col in df.columns]
-        df = df.rename(columns={
-            'name': 'ID',
-            'clean_type': 'Type',
-            'location_lat': 'Latitude',
-            'location_lng': 'Longitude'
-        })
+        # Ověření přítomnosti očekávaných sloupců
+        required_cols = ['ID', 'Icon_ID', 'Icon_Size', 'Opacity', 'Latitude', 'Longitude']
+        if not all(col in df.columns for col in required_cols):
+            raise ValueError(f"CSV soubor neobsahuje požadované sloupce: {required_cols}")
 
-        df['ID'] = df['ID'].str.strip()
-        df['Type'] = df['Type'].str.strip()
+        # Převedeme na správné typy, pokud by někde zlobilo
+        df['Latitude'] = df['Latitude'].astype(float)
+        df['Longitude'] = df['Longitude'].astype(float)
+        df['Icon_ID'] = df['Icon_ID'].astype(int)
+        df['Icon_Size'] = df['Icon_Size'].astype(int)
+        df['Opacity'] = df['Opacity'].astype(float)
 
-        def map_icon_id(typ):
-            typ = typ.lower()
-            if 'hrad' in typ and 'zámek' in typ:
-                return 2
-            elif 'hrad' in typ:
-                return 0
-            elif 'zámek' in typ:
-                return 1
-            else:
-                return None
-
-        df['Icon_ID'] = df['Type'].apply(map_icon_id)
-        df['Latitude'] = df['Latitude'].astype(str).str.replace(" ", "").str.replace(",", ".").astype(float)
-        df['Longitude'] = df['Longitude'].astype(str).str.replace(" ", "").str.replace(",", ".").astype(float)
-        df['Icon_Size'] = 50
-        df['Opacity'] = 1.0
-
-        return df[['ID', 'Icon_ID', 'Icon_Size', 'Opacity', 'Latitude', 'Longitude']]
+        return df[required_cols]
 
     except Exception as e:
         raise FileNotFoundError(f"Chyba při načítání CSV z GitHubu: {e}")
