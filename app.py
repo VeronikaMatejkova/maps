@@ -73,9 +73,9 @@ FACT_BACKGROUND = """
 
 TITLE = 'Hrady a zámky ČR'
 
-IM_CONSTANTS = {0:'https://ibb.co/PvNv1CjL', 
-                1:'https://ibb.co/mVmTt85Y',
-                2:'https://ibb.co/JFcvFc4n'}
+IM_CONSTANTS = {0:'https://i.ibb.co/cS1S2T3B/Icon-hrad.png', 
+                1:'https://i.ibb.co/tTSKcXpN/Icon-zamek.png',
+                2:'https://i.ibb.co/rfQxfQSk/Icon-hrad-a-zamek.png'}
 
 
 @st.cache_resource  # @st.cache_data
