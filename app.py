@@ -31,7 +31,7 @@ def plot_from_df(df, folium_map):
 
 def load_df():
     for path in [
-        "/data/in/tables/out.c-streamlite.dataproapp.csv",
+        "/data/in/tables/out.c-streamlite-DataProApp.csv",  # správný název v Keboola
         "DataProApp.csv"  # fallback pro lokální vývoj
     ]:
         try:
