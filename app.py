@@ -86,7 +86,7 @@ FACT_BACKGROUND = """
 
 TITLE = 'Hrady a zámky ČR'
 
-IM_CONSTANTS = {O:'https://ibb.co/PvNv1CjL', 
+IM_CONSTANTS = {0:'https://ibb.co/PvNv1CjL', 
                 1:'https://ibb.co/mVmTt85Y',
                 2:'https://ibb.co/JFcvFc4n'}
 
