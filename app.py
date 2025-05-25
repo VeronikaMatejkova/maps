@@ -30,48 +30,42 @@ def plot_from_df(df, folium_map):
     return folium_map
 
 def load_df():
-    for path in [
-        "/data/in/tables/out.c-streamlite-DataProApp.csv",  # správný název v Keboola
-        "DataProApp.csv"  # fallback pro lokální vývoj
-    ]:
-        try:
-            df = pd.read_csv(path, sep=";")
+    GITHUB_CSV_URL = "https://raw.githubusercontent.com/VeronikaMatejkova/maps/main/DataProApp.csv"
+    try:
+        df = pd.read_csv(GITHUB_CSV_URL, sep=";")
 
-            df.columns = [col.strip().lower() for col in df.columns]
-            df = df.rename(columns={
-                'name': 'ID',
-                'clean_type': 'Type',
-                'location_lat': 'Latitude',
-                'location_lng': 'Longitude'
-            })
+        df.columns = [col.strip().lower() for col in df.columns]
+        df = df.rename(columns={
+            'name': 'ID',
+            'clean_type': 'Type',
+            'location_lat': 'Latitude',
+            'location_lng': 'Longitude'
+        })
 
-            df['ID'] = df['ID'].str.strip()
-            df['Type'] = df['Type'].str.strip()
+        df['ID'] = df['ID'].str.strip()
+        df['Type'] = df['Type'].str.strip()
 
-            def map_icon_id(typ):
-                typ = typ.lower()
-                if 'hrad' in typ and 'zámek' in typ:
-                    return 2
-                elif 'hrad' in typ:
-                    return 0
-                elif 'zámek' in typ:
-                    return 1
-                else:
-                    return None
+        def map_icon_id(typ):
+            typ = typ.lower()
+            if 'hrad' in typ and 'zámek' in typ:
+                return 2
+            elif 'hrad' in typ:
+                return 0
+            elif 'zámek' in typ:
+                return 1
+            else:
+                return None
 
-            df['Icon_ID'] = df['Type'].apply(map_icon_id)
+        df['Icon_ID'] = df['Type'].apply(map_icon_id)
+        df['Latitude'] = df['Latitude'].astype(str).str.replace(" ", "").str.replace(",", ".").astype(float)
+        df['Longitude'] = df['Longitude'].astype(str).str.replace(" ", "").str.replace(",", ".").astype(float)
+        df['Icon_Size'] = 50
+        df['Opacity'] = 1.0
 
-            df['Latitude'] = df['Latitude'].astype(str).str.replace(" ", "").str.replace(",", ".").astype(float)
-            df['Longitude'] = df['Longitude'].astype(str).str.replace(" ", "").str.replace(",", ".").astype(float)
+        return df[['ID', 'Icon_ID', 'Icon_Size', 'Opacity', 'Latitude', 'Longitude']]
 
-            df['Icon_Size'] = 50
-            df['Opacity'] = 1.0
-
-            return df[['ID', 'Icon_ID', 'Icon_Size', 'Opacity', 'Latitude', 'Longitude']]
-        except FileNotFoundError:
-            continue
-
-    raise FileNotFoundError("CSV soubor nebyl nalezen.")
+    except Exception as e:
+        raise FileNotFoundError(f"Chyba při načítání CSV z GitHubu: {e}")
 
 FACT_BACKGROUND = """
                     <div style="width: 100%;">
@@ -92,9 +86,9 @@ FACT_BACKGROUND = """
 
 TITLE = 'Hrady a zámky ČR'
 
-IM_CONSTANTS = {1:'https://ibb.co/PvNv1CjL', 
-                2:'https://ibb.co/mVmTt85Y',
-                3:'https://ibb.co/JFcvFc4n'}
+IM_CONSTANTS = {O:'https://ibb.co/PvNv1CjL', 
+                1:'https://ibb.co/mVmTt85Y',
+                2:'https://ibb.co/JFcvFc4n'}
 
 
 @st.cache_resource  # @st.cache_data
