@@ -30,7 +30,15 @@ def plot_from_df(df, folium_map):
     return folium_map
 
 def load_df():
-    return pd.read_csv("DataProApp.csv")
+    for path in [
+        "/data/in/tables/out.c-streamlite.dataproapp.csv",
+        "DataProApp.csv"  # fallback pro lokální vývoj
+    ]:
+        try:
+            return pd.read_csv(path)
+        except FileNotFoundError:
+            continue
+    raise FileNotFoundError("CSV soubor nebyl nalezen.")
 
 FACT_BACKGROUND = """
                     <div style="width: 100%;">
