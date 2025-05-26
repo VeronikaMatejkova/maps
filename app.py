@@ -22,7 +22,7 @@ def plot_from_df(df, folium_map):
         icon = folium.features.CustomIcon(IM_CONSTANTS.get(row.Icon_ID, IM_CONSTANTS[0]), icon_size=(row.Icon_Size, row.Icon_Size))
         folium.Marker(
             [row.Latitude, row.Longitude],
-            tooltip=row.ID,
+            tooltip=row.ID,  # důležité pro st_folium
             opacity=row.Opacity,
             icon=icon
         ).add_to(folium_map)
@@ -103,16 +103,26 @@ def main():
     with r2_col3:
         level1_map_data = st_folium(m, height=520, width=600)
 
+        # 🔍 Ladicí výpisy
+        st.write("🪵 DEBUG: level1_map_data:", level1_map_data)
+
         clicked_id = level1_map_data.get('last_object_clicked_tooltip')
+        st.write("🪵 DEBUG: Kliknuto na:", clicked_id)
+        st.write("🪵 DEBUG: Předchozí v session_state:", st.session_state.selected_id)
+
         if clicked_id and clicked_id != st.session_state.selected_id:
             st.session_state.selected_id = clicked_id
 
         if st.session_state.selected_id:
+            st.write("🪵 DEBUG: Hledáme záznam v df pro:", st.session_state.selected_id)
             selected_row = df[df["ID"] == st.session_state.selected_id]
+            st.write("🪵 DEBUG: Nalezený řádek v df:", selected_row)
+
             if not selected_row.empty:
                 row = selected_row.iloc[0]
                 icon_id = row["Icon_ID"]
                 matched_info = df_info[df_info["name"] == row["ID"]]
+                st.write("🪵 DEBUG: Nalezený řádek v df_info:", matched_info)
 
                 st.markdown("### 🏰 Informace o vybraném místě")
                 st.markdown(FACT_BACKGROUND.format(
