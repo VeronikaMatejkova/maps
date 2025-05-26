@@ -104,8 +104,10 @@ def main():
 
     with r2_col3:
         level1_map_data = st_folium(m, height=520, width=600)
-        if level1_map_data and level1_map_data.get('last_object_clicked_tooltip'):
-            st.session_state.selected_id = level1_map_data['last_object_clicked_tooltip']
+
+        clicked_id = level1_map_data.get('last_object_clicked_tooltip')
+        if clicked_id and clicked_id != st.session_state.selected_id:
+            st.session_state.selected_id = clicked_id
 
         if st.session_state.selected_id is not None:
             selected_row = df[df["ID"] == st.session_state.selected_id]
