@@ -19,12 +19,14 @@ def create_point_map(df):
 def plot_from_df(df, folium_map):
     df = create_point_map(df)
     for _, row in df.iterrows():
-        icon = folium.features.CustomIcon(IM_CONSTANTS.get(row.Icon_ID, IM_CONSTANTS[0]), icon_size=(row.Icon_Size, row.Icon_Size))
+        # Místo CustomIcon použijeme běžnou ikonku pro test
+        icon = folium.Icon(color="blue", icon="info-sign")
+        popup = folium.Popup(row.ID, parse_html=True)
         folium.Marker(
             [row.Latitude, row.Longitude],
-            popup=row.ID,  # důležité pro st_folium
-            opacity=row.Opacity,
-            icon=icon
+            popup=popup,
+            icon=icon,
+            opacity=row.Opacity
         ).add_to(folium_map)
     return folium_map
 
@@ -47,22 +49,7 @@ def load_extra_info():
     df_info["name"] = df_info["name"].astype(str).str.strip()
     return df_info
 
-FACT_BACKGROUND = """
-<div style="width: 100%;">
-    <div style="background-color: #ECECEC; border: 1px solid #ECECEC; padding: 1.5% 1% 1.5% 3.5%; border-radius: 10px; width: 100%; color: white; white-space: nowrap;">
-        <p style="font-size:20px; color: black;">{}</p>
-        <p style="font-size:33px; line-height: 0.5; text-indent: 10px;"><img src="{}" alt="Ikona" style="vertical-align: middle; width:{}px;">  {} &emsp; &emsp;</p>
-    </div>
-</div>
-"""
-
 TITLE = 'Hrady a zámky ČR'
-
-IM_CONSTANTS = {
-    0: 'https://i.ibb.co/cS1S2T3B/Icon-hrad.png',
-    1: 'https://i.ibb.co/tTSKcXpN/Icon-zamek.png',
-    2: 'https://i.ibb.co/rfQxfQSk/Icon-hrad-a-zamek.png'
-}
 
 @st.cache_resource
 def load_map():
@@ -73,16 +60,6 @@ def load_map():
 
 def main():
     st.set_page_config(TITLE, page_icon=None, layout='wide')
-    st.markdown("""
-        <style>
-            .block-container {
-                padding-top: 1rem;
-                padding-bottom: 0rem;
-                padding-left: 15rem;
-                padding-right: 15rem;
-            }
-        </style>
-    """, unsafe_allow_html=True)
 
     st.title(TITLE)
 
@@ -95,15 +72,14 @@ def main():
     _, r2_col1, r2_col2, r2_col3, _ = st.columns([1, 4.5, 1, 6, 1])
 
     with r2_col1:
-        st.markdown('## Legenda k ikonám')
-        st.markdown(FACT_BACKGROUND.format("Hrady", IM_CONSTANTS[0], 24, "Ikona 0"), unsafe_allow_html=True)
-        st.markdown("""<div style="padding-top: 15px"></div>""", unsafe_allow_html=True)
-        st.markdown(FACT_BACKGROUND.format("Zámky", IM_CONSTANTS[1], 30, "Ikona 1"), unsafe_allow_html=True)
+        st.markdown('## Legenda')
+        st.markdown("- Modrá ikonka = objekt (hrad/zámek)")
+        st.markdown("- Kliknutím zobrazíte podrobnosti")
 
     with r2_col3:
         level1_map_data = st_folium(m, height=520, width=600)
 
-        # 🔍 Ladicí výpisy
+        # LADICÍ VÝPISY
         st.write("🪵 DEBUG: level1_map_data:", level1_map_data)
 
         clicked_id = level1_map_data.get('last_object_clicked_popup')
@@ -114,23 +90,14 @@ def main():
             st.session_state.selected_id = clicked_id
 
         if st.session_state.selected_id:
-            st.write("🪵 DEBUG: Hledáme záznam v df pro:", st.session_state.selected_id)
             selected_row = df[df["ID"] == st.session_state.selected_id]
-            st.write("🪵 DEBUG: Nalezený řádek v df:", selected_row)
-
             if not selected_row.empty:
                 row = selected_row.iloc[0]
-                icon_id = row["Icon_ID"]
                 matched_info = df_info[df_info["name"] == row["ID"]]
-                st.write("🪵 DEBUG: Nalezený řádek v df_info:", matched_info)
 
                 st.markdown("### 🏰 Informace o vybraném místě")
-                st.markdown(FACT_BACKGROUND.format(
-                    row["ID"],
-                    IM_CONSTANTS.get(icon_id, IM_CONSTANTS[0]),
-                    40,
-                    f"Souřadnice: {row['Latitude']:.4f}, {row['Longitude']:.4f}"
-                ), unsafe_allow_html=True)
+                st.markdown(f"**Název:** {row['ID']}")
+                st.markdown(f"**Souřadnice:** {row['Latitude']:.4f}, {row['Longitude']:.4f}")
 
                 if not matched_info.empty:
                     info = matched_info.iloc[0]
