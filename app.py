@@ -19,10 +19,10 @@ def create_point_map(df):
 def plot_from_df(df, folium_map):
     df = create_point_map(df)
     for _, row in df.iterrows():
-        icon = folium.features.CustomIcon(IM_CONSTANTS[row.Icon_ID], icon_size=(row.Icon_Size, row.Icon_Size))
+        icon = folium.features.CustomIcon(IM_CONSTANTS.get(row.Icon_ID, IM_CONSTANTS[0]), icon_size=(row.Icon_Size, row.Icon_Size))
         folium.Marker(
             [row.Latitude, row.Longitude],
-            tooltip=row.ID,  # Tooltip = ID
+            tooltip=row.ID,
             opacity=row.Opacity,
             icon=icon
         ).add_to(folium_map)
@@ -31,7 +31,6 @@ def plot_from_df(df, folium_map):
 def load_df():
     GITHUB_CSV_URL = "https://raw.githubusercontent.com/VeronikaMatejkova/maps/main/DataProApp.csv"
     df = pd.read_csv(GITHUB_CSV_URL)
-    required_cols = ['ID', 'Icon_ID', 'Icon_Size', 'Opacity', 'Latitude', 'Longitude']
     df = df.dropna(subset=['ID', 'Icon_ID', 'Latitude', 'Longitude'])
     df['ID'] = df['ID'].astype(str).str.strip()
     df['Icon_ID'] = df['Icon_ID'].astype(float).fillna(99).astype(int)
@@ -39,7 +38,7 @@ def load_df():
     df['Opacity'] = df['Opacity'].astype(float).fillna(1.0)
     df['Latitude'] = df['Latitude'].astype(str).str.replace(",", ".").astype(float)
     df['Longitude'] = df['Longitude'].astype(str).str.replace(",", ".").astype(float)
-    return df[required_cols]
+    return df
 
 @st.cache_data
 def load_extra_info():
@@ -52,7 +51,7 @@ FACT_BACKGROUND = """
 <div style="width: 100%;">
     <div style="background-color: #ECECEC; border: 1px solid #ECECEC; padding: 1.5% 1% 1.5% 3.5%; border-radius: 10px; width: 100%; color: white; white-space: nowrap;">
         <p style="font-size:20px; color: black;">{}</p>
-        <p style="font-size:33px; line-height: 0.5; text-indent: 10px;"><img src="{}" alt="Example Image" style="vertical-align: middle; width:{}px;">  {} &emsp; &emsp;</p>
+        <p style="font-size:33px; line-height: 0.5; text-indent: 10px;"><img src="{}" alt="Ikona" style="vertical-align: middle; width:{}px;">  {} &emsp; &emsp;</p>
     </div>
 </div>
 """
@@ -68,7 +67,6 @@ IM_CONSTANTS = {
 @st.cache_resource
 def load_map():
     df = load_df()
-    df["name"] = df["ID"]  # Předpokládáme, že ID obsahuje jméno objektu
     m = init_map()
     m = plot_from_df(df, m)
     return m, df
@@ -109,21 +107,21 @@ def main():
         if clicked_id and clicked_id != st.session_state.selected_id:
             st.session_state.selected_id = clicked_id
 
-        if st.session_state.selected_id is not None:
+        if st.session_state.selected_id:
             selected_row = df[df["ID"] == st.session_state.selected_id]
             if not selected_row.empty:
                 row = selected_row.iloc[0]
                 icon_id = row["Icon_ID"]
                 matched_info = df_info[df_info["name"] == row["ID"]]
-        
+
                 st.markdown("### 🏰 Informace o vybraném místě")
                 st.markdown(FACT_BACKGROUND.format(
                     row["ID"],
-                    IM_CONSTANTS[icon_id],
+                    IM_CONSTANTS.get(icon_id, IM_CONSTANTS[0]),
                     40,
                     f"Souřadnice: {row['Latitude']:.4f}, {row['Longitude']:.4f}"
                 ), unsafe_allow_html=True)
-        
+
                 if not matched_info.empty:
                     info = matched_info.iloc[0]
                     st.markdown(f"**Bezbariérovost:** {info['clean_accessibilityNote']}")
@@ -132,8 +130,6 @@ def main():
                     st.markdown(f"**Děti:** {info['clean_forKidsNote']}")
                 else:
                     st.info("Žádné doplňkové informace nenalezeny.")
-            else:
-                st.warning("Vybraný bod nebyl nalezen v datech.")
 
 if __name__ == "__main__":
     main()
