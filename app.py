@@ -48,6 +48,13 @@ def load_extra_info():
     df_info["name"] = df_info["name"].astype(str).str.strip()
     return df_info
 
+@st.cache_data
+def load_tour_info():
+    TOURS_CSV_URL = "https://raw.githubusercontent.com/VeronikaMatejkova/maps/main/Prohlidkove_okruhy.csv"
+    df_tours = pd.read_csv(TOURS_CSV_URL, sep=";", encoding="utf-8")
+    df_tours["name"] = df_tours["name"].astype(str).str.strip()
+    return df_tours
+
 TITLE = 'Hrady a zámky ČR'
 
 @st.cache_resource
@@ -63,8 +70,8 @@ def main():
 
     m, df = load_map()
     df_info = load_extra_info()
+    df_tours = load_tour_info()
 
-    # výběr objektu
     all_ids = df["ID"].unique().tolist()
     selected_id = st.selectbox("Vyber hrad nebo zámek:", all_ids)
 
@@ -78,7 +85,7 @@ def main():
     with col2:
         st_folium(m, height=520, width=700)
 
-    # zobrazení detailních informací
+    # === Výpis základních informací ===
     st.markdown("---")
     st.markdown("### 🏰 Informace o vybraném místě")
 
@@ -96,6 +103,20 @@ def main():
         st.markdown(f"**Děti:** {info['clean_forKidsNote']}")
     else:
         st.info("Žádné doplňkové informace nenalezeny.")
+
+    # === Výpis prohlídkových okruhů ===
+    st.markdown("### 🗺️ Prohlídkové okruhy")
+
+    matched_tours = df_tours[df_tours["name"] == selected_id]
+
+    if not matched_tours.empty:
+        for _, tour in matched_tours.iterrows():
+            st.markdown(f"#### {tour['Nazev_okruhu']}")
+            st.markdown(f"🕒 *{tour['Time_duration']}* &nbsp;&nbsp;👥 *{tour['Crowd_limit']}*")
+            st.markdown(f"{tour['Tours_content']}")
+            st.markdown("---")
+    else:
+        st.info("Žádné informace o prohlídkových okruzích nejsou k dispozici.")
 
 if __name__ == "__main__":
     main()
