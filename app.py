@@ -22,7 +22,7 @@ def plot_from_df(df, folium_map):
         icon = folium.features.CustomIcon(IM_CONSTANTS.get(row.Icon_ID, IM_CONSTANTS[0]), icon_size=(row.Icon_Size, row.Icon_Size))
         folium.Marker(
             [row.Latitude, row.Longitude],
-            tooltip=row.ID,  # důležité pro st_folium
+            popup=row.ID,  # důležité pro st_folium
             opacity=row.Opacity,
             icon=icon
         ).add_to(folium_map)
@@ -106,7 +106,7 @@ def main():
         # 🔍 Ladicí výpisy
         st.write("🪵 DEBUG: level1_map_data:", level1_map_data)
 
-        clicked_id = level1_map_data.get('last_object_clicked_tooltip')
+        clicked_id = level1_map_data.get('last_object_clicked_popup')
         st.write("🪵 DEBUG: Kliknuto na:", clicked_id)
         st.write("🪵 DEBUG: Předchozí v session_state:", st.session_state.selected_id)
 
