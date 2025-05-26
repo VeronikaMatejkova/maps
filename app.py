@@ -5,7 +5,7 @@ import streamlit as st
 from shapely.geometry import Point
 from streamlit_folium import st_folium
 
-def init_map(center=[50.1087456, 14.4403392], zoom_start=10, map_type="OpenStreetMap"):
+def init_map(center=[50.1087456, 14.4403392], zoom_start=7, map_type="OpenStreetMap"):
     return folium.Map(location=center, zoom_start=zoom_start, tiles=map_type)
 
 def create_point_map(df):
@@ -19,7 +19,6 @@ def create_point_map(df):
 def plot_from_df(df, folium_map):
     df = create_point_map(df)
     for _, row in df.iterrows():
-        # Místo CustomIcon použijeme běžnou ikonku pro test
         icon = folium.Icon(color="blue", icon="info-sign")
         popup = folium.Popup(row.ID, parse_html=True)
         folium.Marker(
@@ -60,53 +59,43 @@ def load_map():
 
 def main():
     st.set_page_config(TITLE, page_icon=None, layout='wide')
-
     st.title(TITLE)
 
     m, df = load_map()
     df_info = load_extra_info()
 
-    if "selected_id" not in st.session_state:
-        st.session_state.selected_id = None
+    # výběr objektu
+    all_ids = df["ID"].unique().tolist()
+    selected_id = st.selectbox("Vyber hrad nebo zámek:", all_ids)
 
-    _, r2_col1, r2_col2, r2_col3, _ = st.columns([1, 4.5, 1, 6, 1])
+    _, col1, col2, _ = st.columns([0.5, 4, 6, 0.5])
 
-    with r2_col1:
+    with col1:
         st.markdown('## Legenda')
-        st.markdown("- Modrá ikonka = objekt (hrad/zámek)")
-        st.markdown("- Kliknutím zobrazíte podrobnosti")
+        st.markdown("- Modrá ikonka = objekt na mapě")
+        st.markdown("- Výběr objektu z dropdownu zobrazí podrobnosti")
 
-    with r2_col3:
-        level1_map_data = st_folium(m, height=520, width=600)
+    with col2:
+        st_folium(m, height=520, width=700)
 
-        # LADICÍ VÝPISY
-        st.write("🪵 DEBUG: level1_map_data:", level1_map_data)
+    # zobrazení detailních informací
+    st.markdown("---")
+    st.markdown("### 🏰 Informace o vybraném místě")
 
-        clicked_id = level1_map_data.get('last_object_clicked_popup')
-        st.write("🪵 DEBUG: Kliknuto na:", clicked_id)
-        st.write("🪵 DEBUG: Předchozí v session_state:", st.session_state.selected_id)
+    selected_row = df[df["ID"] == selected_id].iloc[0]
+    matched_info = df_info[df_info["name"] == selected_id]
 
-        if clicked_id and clicked_id != st.session_state.selected_id:
-            st.session_state.selected_id = clicked_id
+    st.markdown(f"**Název:** {selected_row['ID']}")
+    st.markdown(f"**Souřadnice:** {selected_row['Latitude']:.4f}, {selected_row['Longitude']:.4f}")
 
-        if st.session_state.selected_id:
-            selected_row = df[df["ID"] == st.session_state.selected_id]
-            if not selected_row.empty:
-                row = selected_row.iloc[0]
-                matched_info = df_info[df_info["name"] == row["ID"]]
-
-                st.markdown("### 🏰 Informace o vybraném místě")
-                st.markdown(f"**Název:** {row['ID']}")
-                st.markdown(f"**Souřadnice:** {row['Latitude']:.4f}, {row['Longitude']:.4f}")
-
-                if not matched_info.empty:
-                    info = matched_info.iloc[0]
-                    st.markdown(f"**Bezbariérovost:** {info['clean_accessibilityNote']}")
-                    st.markdown(f"**Zvířata:** {info['clean_animalsNote']}")
-                    st.markdown(f"**Cyklisté:** {info['clean_cyclistsNote']}")
-                    st.markdown(f"**Děti:** {info['clean_forKidsNote']}")
-                else:
-                    st.info("Žádné doplňkové informace nenalezeny.")
+    if not matched_info.empty:
+        info = matched_info.iloc[0]
+        st.markdown(f"**Bezbariérovost:** {info['clean_accessibilityNote']}")
+        st.markdown(f"**Zvířata:** {info['clean_animalsNote']}")
+        st.markdown(f"**Cyklisté:** {info['clean_cyclistsNote']}")
+        st.markdown(f"**Děti:** {info['clean_forKidsNote']}")
+    else:
+        st.info("Žádné doplňkové informace nenalezeny.")
 
 if __name__ == "__main__":
     main()
