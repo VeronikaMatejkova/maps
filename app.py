@@ -18,31 +18,35 @@ def create_point_map(df):
 
 def plot_from_df(df, folium_map):
     df = create_point_map(df)
-    for i, row in df.iterrows():
+    for _, row in df.iterrows():
         icon = folium.features.CustomIcon(IM_CONSTANTS[row.Icon_ID], icon_size=(row.Icon_Size, row.Icon_Size))
-        folium.Marker([row.Latitude, row.Longitude],
-                      tooltip=f'{row.ID}',
-                      opacity=row.Opacity,
-                      icon=icon).add_to(folium_map)
+        folium.Marker(
+            [row.Latitude, row.Longitude],
+            tooltip=row.ID,  # Tooltip = ID
+            opacity=row.Opacity,
+            icon=icon
+        ).add_to(folium_map)
     return folium_map
 
 def load_df():
     GITHUB_CSV_URL = "https://raw.githubusercontent.com/VeronikaMatejkova/maps/main/DataProApp.csv"
-    try:
-        df = pd.read_csv(GITHUB_CSV_URL)
-        required_cols = ['ID', 'Icon_ID', 'Icon_Size', 'Opacity', 'Latitude', 'Longitude']
-        if not all(col in df.columns for col in required_cols):
-            raise ValueError(f"CSV soubor neobsahuje požadované sloupce: {required_cols}")
-        df = df.dropna(subset=['ID', 'Icon_ID', 'Latitude', 'Longitude'])
-        df['ID'] = df['ID'].astype(str).str.strip()
-        df['Icon_ID'] = df['Icon_ID'].astype(float).fillna(99).astype(int)
-        df['Icon_Size'] = df['Icon_Size'].astype(float).fillna(50).astype(int)
-        df['Opacity'] = df['Opacity'].astype(float).fillna(1.0)
-        df['Latitude'] = df['Latitude'].astype(str).str.replace(",", ".").astype(float)
-        df['Longitude'] = df['Longitude'].astype(str).str.replace(",", ".").astype(float)
-        return df[required_cols]
-    except Exception as e:
-        raise FileNotFoundError(f"Chyba při načítání CSV z GitHubu: {e}")
+    df = pd.read_csv(GITHUB_CSV_URL)
+    required_cols = ['ID', 'Icon_ID', 'Icon_Size', 'Opacity', 'Latitude', 'Longitude']
+    df = df.dropna(subset=['ID', 'Icon_ID', 'Latitude', 'Longitude'])
+    df['ID'] = df['ID'].astype(str).str.strip()
+    df['Icon_ID'] = df['Icon_ID'].astype(float).fillna(99).astype(int)
+    df['Icon_Size'] = df['Icon_Size'].astype(float).fillna(50).astype(int)
+    df['Opacity'] = df['Opacity'].astype(float).fillna(1.0)
+    df['Latitude'] = df['Latitude'].astype(str).str.replace(",", ".").astype(float)
+    df['Longitude'] = df['Longitude'].astype(str).str.replace(",", ".").astype(float)
+    return df[required_cols]
+
+@st.cache_data
+def load_extra_info():
+    INFO_CSV_URL = "https://raw.githubusercontent.com/VeronikaMatejkova/maps/main/Zakladni_info.csv"
+    df_info = pd.read_csv(INFO_CSV_URL, sep=";", encoding="utf-8")
+    df_info["name"] = df_info["name"].astype(str).str.strip()
+    return df_info
 
 FACT_BACKGROUND = """
 <div style="width: 100%;">
@@ -64,6 +68,7 @@ IM_CONSTANTS = {
 @st.cache_resource
 def load_map():
     df = load_df()
+    df["name"] = df["ID"]  # Předpokládáme, že ID obsahuje jméno objektu
     m = init_map()
     m = plot_from_df(df, m)
     return m, df
@@ -83,29 +88,19 @@ def main():
 
     st.title(TITLE)
 
-    # načti mapu a data
     m, df = load_map()
+    df_info = load_extra_info()
 
     if "selected_id" not in st.session_state:
         st.session_state.selected_id = None
 
-    _, r1_col1, r1_col2, r1_col3, _ = st.columns([1, 4.5, 1, 6, 1])
-    with r1_col1:
-        st.markdown(f"<p style='font-size: 27px;'><i>Interactive Mapping Demonstration</i></p>", unsafe_allow_html=True)
-    with r1_col3:
-        st.write('')
-
     _, r2_col1, r2_col2, r2_col3, _ = st.columns([1, 4.5, 1, 6, 1])
+
     with r2_col1:
         st.markdown('## Legenda k ikonám')
-        st.markdown(FACT_BACKGROUND.format("Monkey's Tracked", IM_CONSTANTS[0], 24, "XX Active Monkey"), unsafe_allow_html=True)
+        st.markdown(FACT_BACKGROUND.format("Hrady", IM_CONSTANTS[0], 24, "Ikona 0"), unsafe_allow_html=True)
         st.markdown("""<div style="padding-top: 15px"></div>""", unsafe_allow_html=True)
-        st.markdown(FACT_BACKGROUND.format("Banana Locations", IM_CONSTANTS[1], 30, "YY Outstanding Bananas"), unsafe_allow_html=True)
-        for _ in range(10):
-            st.markdown("")
-
-    with r2_col2:
-        st.write("")
+        st.markdown(FACT_BACKGROUND.format("Zámky", IM_CONSTANTS[1], 30, "Ikona 1"), unsafe_allow_html=True)
 
     with r2_col3:
         level1_map_data = st_folium(m, height=520, width=600)
@@ -113,12 +108,32 @@ def main():
             st.session_state.selected_id = level1_map_data['last_object_clicked_tooltip']
 
         if st.session_state.selected_id is not None:
-            try:
-                selected_icon_id = df[df["ID"] == st.session_state.selected_id]["Icon_ID"].values[0]
-                st.write(f'You Have Selected: {st.session_state.selected_id}')
-                st.image(IM_CONSTANTS[selected_icon_id], width=110)
-            except Exception as e:
-                st.warning(f"Nepodařilo se najít vybraný záznam: {e}")
+            selected_row = df[df["ID"] == st.session_state.selected_id]
+            if not selected_row.empty:
+                row = selected_row.iloc[0]
+                icon_id = row["Icon_ID"]
+                name = row["name"]
+
+                matched_info = df_info[df_info["name"] == name]
+
+                st.markdown("### 🏰 Informace o vybraném místě")
+                st.markdown(FACT_BACKGROUND.format(
+                    name,
+                    IM_CONSTANTS[icon_id],
+                    40,
+                    f"ID: {row['ID']}"
+                ), unsafe_allow_html=True)
+
+                if not matched_info.empty:
+                    info = matched_info.iloc[0]
+                    st.markdown(f"**Bezbariérovost:** {info['clean_accessibilityNote']}")
+                    st.markdown(f"**Zvířata:** {info['clean_animalsNote']}")
+                    st.markdown(f"**Cyklisté:** {info['clean_cyclistsNote']}")
+                    st.markdown(f"**Děti:** {info['clean_forKidsNote']}")
+                else:
+                    st.info("Žádné doplňkové informace nenalezeny.")
+            else:
+                st.warning("Vybraný bod nebyl nalezen v datech.")
 
 if __name__ == "__main__":
     main()
