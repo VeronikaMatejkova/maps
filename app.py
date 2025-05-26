@@ -112,18 +112,16 @@ def main():
             if not selected_row.empty:
                 row = selected_row.iloc[0]
                 icon_id = row["Icon_ID"]
-                name = row["name"]
-
-                matched_info = df_info[df_info["name"] == name]
-
+                matched_info = df_info[df_info["name"] == row["ID"]]
+        
                 st.markdown("### 🏰 Informace o vybraném místě")
                 st.markdown(FACT_BACKGROUND.format(
-                    name,
+                    row["ID"],
                     IM_CONSTANTS[icon_id],
                     40,
-                    f"ID: {row['ID']}"
+                    f"Souřadnice: {row['Latitude']:.4f}, {row['Longitude']:.4f}"
                 ), unsafe_allow_html=True)
-
+        
                 if not matched_info.empty:
                     info = matched_info.iloc[0]
                     st.markdown(f"**Bezbariérovost:** {info['clean_accessibilityNote']}")
