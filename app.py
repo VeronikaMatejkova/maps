@@ -97,7 +97,7 @@ def main():
 
     _, r2_col1, r2_col2, r2_col3, _ = st.columns([1, 4.5, 1, 6, 1])
     with r2_col1:
-        st.markdown('## Arcane Optimization of Potassium Intake')
+        st.markdown('## Legenda k ikonám')
         st.markdown(FACT_BACKGROUND.format("Monkey's Tracked", IM_CONSTANTS[0], 24, "XX Active Monkey"), unsafe_allow_html=True)
         st.markdown("""<div style="padding-top: 15px"></div>""", unsafe_allow_html=True)
         st.markdown(FACT_BACKGROUND.format("Banana Locations", IM_CONSTANTS[1], 30, "YY Outstanding Bananas"), unsafe_allow_html=True)
